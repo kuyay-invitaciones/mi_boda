@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitaciones Digitales Exclusivas</title>
+    
+    <!-- Tailwind CSS para diseño moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Cliente oficial de Supabase JS v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Iconos Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tipografías Premium: Cormorant Garamond (Títulos) + Plus Jakarta Sans (Textos) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            DEFAULT: 'var(--theme-color, #9A7B4F)',
+                            light: 'var(--theme-light, #F7F3EE)',
+                            dark: 'var(--theme-dark, #5E492C)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --theme-color: #9A7B4F;
+            --theme-light: #F7F3EE;
+            --theme-dark: #5E492C;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FAF9F6;
+            color: #1F2937;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .font-editorial {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* Animación de apertura del sobre */
+        .envelope-overlay {
+            transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .envelope-opened {
+            opacity: 0;
+            transform: translateY(-40px) scale(1.03);
+            pointer-events: none;
+        }
+
+        /* Animación suave de entrada */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up {
+            animation: fadeUp 0.8s ease-out forwards;
+        }
+
+        /* Sello de lacre simulado */
+        .wax-seal {
+            background: radial-gradient(circle at 30% 30%, var(--theme-color), var(--theme-dark));
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+
+        /* Scrollbar elegante */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #F3F4F6; }
+        ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+    </style>
+</head>
+<body class="antialiased selection:bg-stone-200 selection:text-stone-900">
+
+    <!-- =====================================================================
+         NOTIFICACIONES TOAST (Reemplaza alert() para experiencia premium)
+    ====================================================================== -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0 pointer-events-none"></div>
+
+    <!-- =====================================================================
+         PANTALLA DE CARGA INICIAL
+    ====================================================================== -->
+    <div id="view-loader" class="fixed inset-0 z-50 bg-[#FAF9F6] flex flex-col items-center justify-center p-6">
+        <div class="w-12 h-12 border-2 border-stone-200 border-t-[var(--theme-color)] rounded-full animate-spin mb-4"></div>
+        <p class="font-editorial text-xl text-stone-600 italic">Preparando experiencia...</p>
+    </div>
+
+    <!-- =====================================================================
+         VISTA 0: LANDING / EVENTO NO ENCONTRADO
+    ====================================================================== -->
+    <div id="view-not-found" class="hidden min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#FAF9F6]">
+        <div class="max-w-md w-full bg-white p-8 sm:p-10 rounded-3xl shadow-sm border border-stone-100">
+            <div class="w-14 h-14 bg-stone-100 text-stone-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="sparkles" class="w-7 h-7"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-stone-900 mb-3">Invitaciones Digitales</h1>
+            <p id="not-found-msg" class="text-stone-500 text-sm leading-relaxed mb-8">
+                El enlace de invitación que buscas no está disponible o aún no ha sido publicado. Verifica la dirección con los anfitriones.
+            </p>
+            <div class="flex flex-col gap-3">
+                <button onclick="navigateTo('?event=demo-boda')" class="w-full py-3.5 px-6 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition">
+                    Ver Invitación de Demostración
+                </button>
+                <button onclick="navigateTo('?admin=true')" class="w-full py-3.5 px-6 rounded-xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 transition">
+                    Acceso Administradores
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         VISTA A: INVITACIÓN PÚBLICA INTERACTIVA
+    ====================================================================== -->
+    <div id="view-invitation" class="hidden min-h-screen bg-[#FAF9F6]">
+        
+        <!-- 1. PANTALLA DE BIENVENIDA (SOBRE INTERACTIVO) -->
+        <div id="envelope-screen" class="envelope-overlay fixed inset-0 z-40 bg-[#F5F2EB] flex flex-col items-center justify-center p-6 text-center">
+            <div class="max-w-lg w-full bg-white/90 backdrop-blur-md p-8 sm:p-12 rounded-3xl shadow-xl border border-stone-200/70 relative overflow-hidden">
+                <!-- Detalle decorativo superior -->
+                <div class="w-16 h-0.5 bg-[var(--theme-color)] mx-auto mb-6 opacity-60"></div>
+                
+                <p id="env-event-type" class="uppercase tracking-[0.25em] text-xs font-semibold text-stone-500 mb-3">
+                    Tenemos el honor de invitarte
+                </p>
+                
+                <h1 id="env-protagonists" class="text-4xl sm:text-5xl font-bold text-stone-900 leading-tight mb-4">
+                    Cargando...
+                </h1>
+                
+                <p id="env-date-preview" class="text-sm text-stone-500 mb-10 font-light tracking-wide">
+                    ...
+                </p>
+
+                <!-- Sello interactivo y botón abrir -->
+                <button id="btn-open-envelope" onclick="openInvitation()" class="group relative inline-flex flex-col items-center justify-center focus:outline-none">
+                    <div class="wax-seal w-20 h-20 rounded-full flex items-center justify-center text-white mb-4 transform group-hover:scale-105 transition-all duration-300 cursor-pointer">
+                        <i data-lucide="mail-open" class="w-8 h-8"></i>
+                    </div>
+                    <span class="px-8 py-3.5 rounded-full bg-stone-900 text-white text-xs uppercase tracking-[0.2em] font-semibold shadow-md group-hover:bg-[var(--theme-color)] transition-colors duration-300">
+                        Abrir invitación
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. CONTENIDO PRINCIPAL DE LA INVITACIÓN -->
+        <main id="invitation-content" class="hidden opacity-0 transition-opacity duration-700">
+            
+            <!-- HERO SECTION CON FOTO PRINCIPAL -->
+            <section class="relative min-h-[88vh] flex items-end justify-center text-center overflow-hidden">
+                <img id="inv-cover-img" src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80" 
+                     alt="Portada del evento" 
+                     onerror="this.src='https://placehold.co/1200x800/EAE4DC/5E492C?text=Nuestra+Celebracion'"
+                     class="absolute inset-0 w-full h-full object-cover object-center scale-105 transition-transform duration-1000">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10"></div>
+                
+                <div class="relative z-10 max-w-3xl mx-auto px-6 pb-16 sm:pb-24 text-white animate-fade-up">
+                    <span id="inv-badge-type" class="inline-block px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-xs uppercase tracking-[0.25em] mb-5">
+                        Nuestra Boda
+                    </span>
+                    <h1 id="inv-protagonists" class="text-5xl sm:text-7xl font-bold tracking-tight mb-4 leading-none">
+                        Camila & Sebastián
+                    </h1>
+                    <p id="inv-hero-date" class="text-base sm:text-lg text-stone-200 font-light tracking-widest uppercase">
+                        24 de Octubre de 2026
+                    </p>
+                </div>
+            </section>
+
+            <!-- FRASE / MENSAJE ESPECIAL -->
+            <section class="py-20 sm:py-28 px-6 max-w-2xl mx-auto text-center">
+                <i data-lucide="quote" class="w-8 h-8 mx-auto mb-6 text-[var(--theme-color)] opacity-60"></i>
+                <p id="inv-phrase" class="font-editorial italic text-2xl sm:text-4xl text-stone-800 leading-relaxed mb-6">
+                    "Hay momentos en la vida que son especiales por sí solos, pero compartirlos con las personas que queremos los convierte en inolvidables."
+                </p>
+                <div class="w-12 h-0.5 bg-[var(--theme-color)] mx-auto opacity-50"></div>
+            </section>
+
+            <!-- CUENTA REGRESIVA -->
+            <section class="py-16 px-6 bg-[var(--theme-light)] border-y border-stone-200/60">
+                <div class="max-w-3xl mx-auto text-center">
+                    <p class="uppercase tracking-[0.25em] text-xs font-semibold text-stone-500 mb-8">
+                        Faltan tan solo
+                    </p>
+                    <div class="grid grid-cols-4 gap-3 sm:gap-6 max-w-lg mx-auto">
+                        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-stone-100">
+                            <span id="cd-days" class="block font-editorial text-3xl sm:text-5xl font-bold text-stone-900">00</span>
+                            <span class="text-[11px] uppercase tracking-wider text-stone-400 mt-1 block">Días</span>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-stone-100">
+                            <span id="cd-hours" class="block font-editorial text-3xl sm:text-5xl font-bold text-stone-900">00</span>
+                            <span class="text-[11px] uppercase tracking-wider text-stone-400 mt-1 block">Horas</span>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-stone-100">
+                            <span id="cd-minutes" class="block font-editorial text-3xl sm:text-5xl font-bold text-stone-900">00</span>
+                            <span class="text-[11px] uppercase tracking-wider text-stone-400 mt-1 block">Min</span>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-stone-100">
+                            <span id="cd-seconds" class="block font-editorial text-3xl sm:text-5xl font-bold text-[var(--theme-color)]">00</span>
+                            <span class="text-[11px] uppercase tracking-wider text-stone-400 mt-1 block">Seg</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DETALLES DE FECHA, HORA Y UBICACIÓN -->
+            <section class="py-20 sm:py-24 px-6 max-w-4xl mx-auto">
+                <div class="text-center mb-14">
+                    <p class="uppercase tracking-[0.25em] text-xs font-semibold text-[var(--theme-color)] mb-2">Coordenadas</p>
+                    <h2 class="text-4xl sm:text-5xl font-bold text-stone-900">¿Cuándo y Dónde?</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Tarjeta Fecha y Hora -->
+                    <div class="bg-white p-8 sm:p-10 rounded-3xl shadow-sm border border-stone-100 text-center flex flex-col items-center justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-2xl bg-[var(--theme-light)] text-[var(--theme-color)] flex items-center justify-center mx-auto mb-5">
+                                <i data-lucide="calendar-heart" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-stone-900 mb-2">Fecha y Hora</h3>
+                            <p id="inv-formatted-date" class="text-stone-600 font-medium mb-1">Sábado, 24 de Octubre</p>
+                            <p id="inv-formatted-time" class="text-stone-500 text-sm mb-6">Recepción: 19:00 hrs</p>
+                        </div>
+                        <button onclick="downloadCalendarICS()" class="w-full py-3 px-5 rounded-xl border border-stone-200 text-stone-700 text-xs uppercase tracking-wider font-semibold hover:bg-stone-50 transition flex items-center justify-center gap-2">
+                            <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+                            Agendar en calendario
+                        </button>
+                    </div>
+
+                    <!-- Tarjeta Ubicación y Google Maps -->
+                    <div class="bg-white p-8 sm:p-10 rounded-3xl shadow-sm border border-stone-100 text-center flex flex-col items-center justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-2xl bg-[var(--theme-light)] text-[var(--theme-color)] flex items-center justify-center mx-auto mb-5">
+                                <i data-lucide="map-pin" class="w-6 h-6"></i>
+                            </div>
+                            <h3 id="inv-location-name" class="text-2xl font-bold text-stone-900 mb-2">Hacienda Los Rosales</h3>
+                            <p id="inv-location-address" class="text-stone-500 text-sm leading-relaxed mb-6">
+                                Av. Las Palmeras 450, Valle Verde
+                            </p>
+                        </div>
+                        <a id="inv-maps-link" href="https://maps.google.com" target="_blank" rel="noopener noreferrer" 
+                           class="w-full py-3.5 px-5 rounded-xl bg-stone-900 text-white text-xs uppercase tracking-wider font-semibold hover:bg-[var(--theme-color)] transition flex items-center justify-center gap-2 shadow-sm">
+                            <i data-lucide="navigation" class="w-4 h-4"></i>
+                            Abrir en Google Maps
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GALERÍA DE FOTOGRAFÍAS -->
+            <section id="inv-gallery-section" class="py-16 px-6 max-w-5xl mx-auto">
+                <div class="text-center mb-12">
+                    <p class="uppercase tracking-[0.25em] text-xs font-semibold text-[var(--theme-color)] mb-2">Recuerdos</p>
+                    <h2 class="text-4xl sm:text-5xl font-bold text-stone-900">Nuestros Momentos</h2>
+                </div>
+                <div id="inv-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </section>
+
+            <!-- FORMULARIO DE CONFIRMACIÓN DE ASISTENCIA (RSVP) -->
+            <section id="rsvp-section" class="py-20 sm:py-28 px-6 bg-[var(--theme-light)] mt-12">
+                <div class="max-w-xl mx-auto bg-white rounded-3xl p-8 sm:p-12 shadow-lg border border-stone-100">
+                    <div class="text-center mb-8">
+                        <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--theme-light)] text-[var(--theme-color)] mb-4">
+                            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                        </span>
+                        <h2 class="text-3xl sm:text-4xl font-bold text-stone-900 mb-2">¡Queremos contar contigo!</h2>
+                        <p id="inv-rsvp-subtitle" class="text-stone-500 text-sm">
+                            Por favor completa tus datos para confirmar tu asistencia al evento.
+                        </p>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form id="rsvp-form" onsubmit="handleRSVPSubmit(event)" class="space-y-5">
+                        <div>
+                            <label for="guest-name" class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                Nombre y Apellidos *
+                            </label>
+                            <input type="text" id="guest-name" required minlength="3" maxlength="100"
+                                   placeholder="Ej. María Fernanda López"
+                                   class="w-full px-4 py-3.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:bg-white transition">
+                        </div>
+
+                        <div>
+                            <label for="guest-phone" class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                Número de Celular <span class="text-stone-400 font-normal lowercase">(opcional)</span>
+                            </label>
+                            <input type="tel" id="guest-phone" maxlength="25"
+                                   placeholder="Ej. +51 987 654 321"
+                                   class="w-full px-4 py-3.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:bg-white transition">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="guest-status" class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    ¿Asistirás? *
+                                </label>
+                                <select id="guest-status" onchange="toggleCompanionsField()"
+                                        class="w-full px-4 py-3.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:bg-white transition">
+                                    <option value="confirmado">Sí, asistiré</option>
+                                    <option value="no_asiste">No podré asistir</option>
+                                </select>
+                            </div>
+
+                            <div id="companions-wrapper">
+                                <label for="guest-companions" class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Total de Personas *
+                                </label>
+                                <select id="guest-companions"
+                                        class="w-full px-4 py-3.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:bg-white transition">
+                                    <option value="1">1 persona (Solo yo)</option>
+                                    <option value="2">2 personas</option>
+                                    <option value="3">3 personas</option>
+                                    <option value="4">4 personas</option>
+                                    <option value="5">5 personas</option>
+                                    <option value="6">6 personas</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-submit-rsvp"
+                                class="w-full py-4 px-6 rounded-xl bg-stone-900 text-white text-xs uppercase tracking-[0.2em] font-semibold hover:bg-[var(--theme-color)] transition-all duration-300 shadow-md flex items-center justify-center gap-2 mt-4">
+                            <span>Confirmar asistencia</span>
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+
+                    <!-- Estado de Confirmación Exitosa -->
+                    <div id="rsvp-success-box" class="hidden text-center py-6 animate-fade-up">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="check" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-stone-900 mb-2">¡Registro Guardado!</h3>
+                        <p id="rsvp-success-text" class="text-stone-600 text-sm leading-relaxed mb-6">
+                            Hemos recibido tu confirmación correctamente. ¡Muchas gracias por acompañarnos!
+                        </p>
+                        <button onclick="resetRSVPForm()" class="text-xs font-semibold uppercase tracking-wider text-stone-400 hover:text-stone-700 underline">
+                            Registrar a otro invitado
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FOOTER -->
+            <footer class="py-10 px-6 text-center text-stone-400 text-xs border-t border-stone-200/60 bg-white">
+                <p id="footer-protagonists" class="font-editorial text-lg text-stone-700 mb-1">Camila & Sebastián</p>
+                <p>Invitación Digital Interactiva</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- =====================================================================
+         VISTA B: PANEL ADMINISTRATIVO PRIVADO (SUPABASE AUTH)
+    ====================================================================== -->
+    <div id="view-admin" class="hidden min-h-screen bg-stone-50">
+        
+        <!-- B.1: PANTALLA DE LOGIN ADMINISTRADOR -->
+        <div id="admin-login-screen" class="min-h-screen flex items-center justify-center p-6">
+            <div class="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 shadow-sm border border-stone-200/80">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="w-11 h-11 rounded-2xl bg-stone-900 text-white flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-stone-400 bg-stone-100 px-3 py-1 rounded-full">
+                        Panel Privado
+                    </span>
+                </div>
+
+                <h1 class="text-3xl font-bold text-stone-900 mb-2">Iniciar Sesión</h1>
+                <p class="text-stone-500 text-sm mb-8">
+                    Ingresa tus credenciales de administrador para gestionar tus eventos e invitados.
+                </p>
+
+                <form id="admin-login-form" onsubmit="handleAdminLogin(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                            Correo Electrónico
+                        </label>
+                        <input type="email" id="admin-email" required placeholder="admin@tudominio.com"
+                               class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-stone-900 focus:bg-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                            Contraseña
+                        </label>
+                        <input type="password" id="admin-password" required placeholder="••••••••"
+                               class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-stone-900 focus:bg-white">
+                    </div>
+
+                    <button type="submit" id="btn-admin-login"
+                            class="w-full py-3.5 px-6 rounded-xl bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 transition shadow-sm flex items-center justify-center gap-2">
+                        <span>Acceder al Panel</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-stone-100 text-center">
+                    <button onclick="navigateTo('?event=demo-boda')" class="text-xs text-stone-500 hover:text-stone-900 transition">
+                        ← Volver a vista de invitación
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- B.2: DASHBOARD ADMINISTRATIVO AUTENTICADO -->
+        <div id="admin-dashboard-screen" class="hidden min-h-screen flex flex-col">
+            
+            <!-- Barra Superior -->
+            <header class="bg-white border-b border-stone-200 sticky top-0 z-30">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-stone-900 text-white flex items-center justify-center font-editorial font-bold text-lg">
+                            I
+                        </div>
+                        <div>
+                            <span class="font-semibold text-stone-900 text-sm block leading-none">Gestor de Eventos</span>
+                            <span id="admin-user-email" class="text-[11px] text-stone-400">admin@correo.com</span>
+                        </div>
+                    </div>
+
+                    <!-- Selector de Evento Activo (Soporte Multievento) -->
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <select id="admin-event-selector" onchange="switchAdminEvent(this.value)"
+                                class="max-w-[160px] sm:max-w-xs px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-xs sm:text-sm font-medium text-stone-800 focus:outline-none">
+                        </select>
+
+                        <button onclick="openNewEventModal()" title="Crear nuevo evento"
+                                class="p-2 rounded-xl bg-stone-900 text-white hover:bg-stone-800 transition flex items-center gap-1.5 text-xs font-medium px-3">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Nuevo</span>
+                        </button>
+
+                        <button onclick="handleAdminLogout()" title="Cerrar sesión"
+                                class="p-2 rounded-xl text-stone-500 hover:bg-red-50 hover:text-red-600 transition">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido Principal del Dashboard -->
+            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 flex-1">
+                
+                <!-- Banner de Enlace Público Compartible -->
+                <div id="admin-share-banner" class="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200/80 shadow-sm mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <i data-lucide="link" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-stone-400">Enlace Público de la Invitación</p>
+                            <p id="admin-public-url" class="text-sm font-medium text-stone-800 break-all">https://...</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <button onclick="copyPublicLink()" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            Copiar enlace
+                        </button>
+                        <a id="admin-preview-link" href="#" target="_blank" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                            Ver invitación
+                        </a>
+                    </div>
+                </div>
+
+                <!-- MÉTRICAS / KPI CARDS -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between text-stone-400 mb-2">
+                            <span class="text-xs font-medium">Cupo / Invitados</span>
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </div>
+                        <p id="kpi-total-invited" class="text-2xl sm:text-3xl font-bold text-stone-900">0</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between text-stone-400 mb-2">
+                            <span class="text-xs font-medium">Registros Recibidos</span>
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                        </div>
+                        <p id="kpi-total-records" class="text-2xl sm:text-3xl font-bold text-stone-900">0</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between text-emerald-600 mb-2">
+                            <span class="text-xs font-medium text-stone-500">Confirmaciones</span>
+                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        </div>
+                        <p id="kpi-confirmed-records" class="text-2xl sm:text-3xl font-bold text-emerald-600">0</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm">
+                        <div class="flex items-center justify-between text-blue-600 mb-2">
+                            <span class="text-xs font-medium text-stone-500">Personas Asistirán</span>
+                            <i data-lucide="user-check" class="w-4 h-4"></i>
+                        </div>
+                        <p id="kpi-total-attendees" class="text-2xl sm:text-3xl font-bold text-stone-900">0</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200/80 shadow-sm col-span-2 lg:col-span-1">
+                        <div class="flex items-center justify-between text-amber-600 mb-2">
+                            <span class="text-xs font-medium text-stone-500">Pendientes</span>
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                        </div>
+                        <p id="kpi-pending" class="text-2xl sm:text-3xl font-bold text-amber-600">0</p>
+                    </div>
+                </div>
+
+                <!-- PESTAÑAS DE NAVEGACIÓN DEL PANEL -->
+                <div class="flex border-b border-stone-200 mb-6 gap-6">
+                    <button id="tab-btn-guests" onclick="switchAdminTab('guests')" class="pb-3.5 text-sm font-semibold border-b-2 border-stone-900 text-stone-900 flex items-center gap-2">
+                        <i data-lucide="list-checks" class="w-4 h-4"></i>
+                        Gestión de Invitados
+                    </button>
+                    <button id="tab-btn-settings" onclick="switchAdminTab('settings')" class="pb-3.5 text-sm font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center gap-2">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                        Editar Invitación
+                    </button>
+                </div>
+
+                <!-- TAB 1: GESTIÓN DE INVITADOS -->
+                <div id="admin-tab-guests" class="space-y-4">
+                    <!-- Barra de Herramientas (Buscador, Filtros, Exportar) -->
+                    <div class="bg-white p-4 rounded-2xl border border-stone-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                            <div class="relative flex-1 max-w-sm">
+                                <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="guest-search-input" oninput="renderGuestsTable()" placeholder="Buscar por nombre o celular..."
+                                       class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-stone-900">
+                            </div>
+
+                            <select id="guest-filter-status" onchange="renderGuestsTable()"
+                                    class="px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-stone-700 focus:outline-none">
+                                <option value="all">Todos los estados</option>
+                                <option value="confirmado">Confirmados</option>
+                                <option value="no_asiste">No asisten</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button onclick="loadAdminGuests()" title="Actualizar lista"
+                                    class="p-2.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 transition">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="exportGuestsToCSV()"
+                                    class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-2 shadow-sm">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                Exportar Excel / CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Invitados -->
+                    <div class="bg-white rounded-2xl border border-stone-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-stone-50 border-b border-stone-200 text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+                                        <th class="py-3.5 px-5">Nombre y Apellidos</th>
+                                        <th class="py-3.5 px-5">Celular</th>
+                                        <th class="py-3.5 px-5 text-center">Asistentes</th>
+                                        <th class="py-3.5 px-5">Estado</th>
+                                        <th class="py-3.5 px-5">Fecha Registro</th>
+                                        <th class="py-3.5 px-5 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="guests-table-body" class="divide-y divide-stone-100 text-sm">
+                                    <!-- Renderizado dinámico -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="guests-empty-state" class="hidden py-12 px-6 text-center">
+                            <p class="text-stone-400 text-sm">No se encontraron registros con los filtros actuales.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: GESTIÓN / EDICIÓN DEL EVENTO -->
+                <div id="admin-tab-settings" class="hidden">
+                    <form id="event-settings-form" onsubmit="handleSaveEventSettings(event)" class="bg-white rounded-2xl border border-stone-200/80 p-6 sm:p-8 shadow-sm space-y-6">
+                        <div class="flex items-center justify-between border-b border-stone-100 pb-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-stone-900">Configuración de la Invitación</h2>
+                                <p class="text-xs text-stone-500">Los cambios se reflejarán inmediatamente en el enlace público.</p>
+                            </div>
+                            <button type="submit" id="btn-save-event"
+                                    class="px-6 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition flex items-center gap-2 shadow-sm">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Protagonistas / Título Principal *
+                                </label>
+                                <input type="text" id="edit-protagonists" required
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Tipo de Acontecimiento
+                                </label>
+                                <input type="text" id="edit-event-type" placeholder="Ej. Nuestra Boda, Mis XV Años, Bautizo"
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Fecha y Hora del Evento *
+                                </label>
+                                <input type="datetime-local" id="edit-event-date" required
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                        Invitados Estimados
+                                    </label>
+                                    <input type="number" id="edit-total-invited" min="0"
+                                           class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                        Color Principal
+                                    </label>
+                                    <input type="color" id="edit-theme-color" value="#9A7B4F"
+                                           class="w-full h-[46px] p-1 rounded-xl bg-stone-50 border border-stone-200 cursor-pointer">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Nombre del Lugar / Recepción *
+                                </label>
+                                <input type="text" id="edit-location-name" required
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Dirección Exacta *
+                                </label>
+                                <input type="text" id="edit-location-address" required
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Enlace de Google Maps
+                                </label>
+                                <input type="url" id="edit-maps-url" placeholder="https://maps.google.com/..."
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Frase Romántica o Mensaje Especial
+                                </label>
+                                <textarea id="edit-phrase" rows="3"
+                                          class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm"></textarea>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Texto de Confirmación (RSVP)
+                                </label>
+                                <input type="text" id="edit-rsvp-subtitle"
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    URL Fotografía de Portada
+                                </label>
+                                <input type="url" id="edit-cover-image" placeholder="https://..."
+                                       class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
+                                    Galería de Fotos (Una URL por línea)
+                                </label>
+                                <textarea id="edit-gallery-images" rows="4" placeholder="https://imagen1.jpg&#10;https://imagen2.jpg"
+                                          class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm font-mono text-xs"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         MODAL: CREAR NUEVO EVENTO (MULTIEVENTO)
+    ====================================================================== -->
+    <div id="modal-new-event" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-xl">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-stone-900">Nuevo Evento</h3>
+                <button onclick="closeNewEventModal()" class="p-2 text-stone-400 hover:text-stone-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="handleCreateNewEvent(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1.5">
+                        Protagonistas *
+                    </label>
+                    <input type="text" id="new-ev-protagonists" required placeholder="Ej. Carlos y María"
+                           oninput="autoGenerateSlug(this.value)"
+                           class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1.5">
+                        Enlace Personalizado (Slug) *
+                    </label>
+                    <div class="flex items-center bg-stone-50 border border-stone-200 rounded-xl px-3">
+                        <span class="text-xs text-stone-400">/</span>
+                        <input type="text" id="new-ev-slug" required pattern="[a-z0-9-]+" placeholder="carlos-y-maria"
+                               class="w-full py-3 px-1 bg-transparent text-sm focus:outline-none">
+                    </div>
+                    <p class="text-[11px] text-stone-400 mt-1">Solo letras minúsculas, números y guiones.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1.5">
+                        Tipo de Evento
+                    </label>
+                    <select id="new-ev-type" class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                        <option value="Nuestra Boda">Boda</option>
+                        <option value="Mis XV Años">Quinceañero</option>
+                        <option value="Mi Bautizo">Bautizo</option>
+                        <option value="¡Celebremos Juntos!">Cumpleaños / Otro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1.5">
+                        Fecha y Hora *
+                    </label>
+                    <input type="datetime-local" id="new-ev-date" required
+                           class="w-full px-4 py-3 rounded-xl bg-stone-50 border border-stone-200 text-sm">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-stone-900 text-white text-xs uppercase tracking-wider font-semibold hover:bg-stone-800 transition mt-2">
+                    Crear Invitación
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         MODAL: CONFIRMACIÓN DE ELIMINACIÓN (Sin usar confirm() nativo)
+    ====================================================================== -->
+    <div id="modal-confirm-delete" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-xl">
+            <div class="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-stone-900 mb-2">¿Eliminar registro?</h3>
+            <p class="text-stone-500 text-sm mb-6">Esta acción eliminará permanentemente la confirmación de este invitado.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200">
+                    Cancelar
+                </button>
+                <button id="btn-confirm-delete-action" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         LÓGICA JAVASCRIPT VANILLA + SUPABASE
+    ====================================================================== -->
+    <script>
+        /**
+         * 1. CONFIGURACIÓN DE SUPABASE
+         * Reemplaza estos dos valores con los de tu proyecto en Supabase (Project Settings -> API)
+         * IMPORTANTE: Usa ÚNICAMENTE la clave 'anon' / 'public'. NUNCA uses 'service_role'.
+         */
+        const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+        const SUPABASE_ANON_KEY = 'TU-CLAVE-PUBLICA-ANON-KEY';
+
+        // Verificar si las credenciales reales han sido configuradas
+        const isSupabaseConfigured = !SUPABASE_URL.includes('TU-PROYECTO') && SUPABASE_ANON_KEY.length > 20;
+        const supabaseClient = isSupabaseConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        // Estado global de la aplicación
+        let currentEvent = null;
+        let adminEvents = [];
+        let adminGuests = [];
+        let countdownInterval = null;
+        let isSubmittingRSVP = false;
+
+        // Evento de demostración (se usa solo si aún no configuras Supabase o entras a ?event=demo-boda)
+        const DEMO_EVENT = {
+            id: '00000000-0000-0000-0000-000000000000',
+            slug: 'demo-boda',
+            protagonists: 'Camila & Sebastián',
+            event_type: 'Nuestra Boda',
+            phrase: 'Hay momentos en la vida que son especiales por sí solos, pero compartirlos con las personas que queremos los convierte en inolvidables.',
+            event_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+            location_name: 'Hacienda Los Rosales',
+            location_address: 'Av. Las Palmeras 450, Valle Verde',
+            maps_url: 'https://maps.google.com',
+            cover_image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80',
+            gallery_images: [
+                'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+                'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80',
+                'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80'
+            ],
+            theme_color: '#9A7B4F',
+            total_invited: 120,
+            rsvp_subtitle: 'Por favor confirma tu asistencia antes del evento para reservar tu lugar.'
+        };
+
+        /**
+         * 2. INICIALIZACIÓN Y ENRUTAMIENTO MULTIEVENTO
+         */
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            await routeApp();
+        });
+
+        async function routeApp() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+
+            // Detectar si se solicita el panel administrativo (/admin o ?admin=true)
+            const isAdminRoute = path === 'admin' || urlParams.get('admin') === 'true';
+
+            if (isAdminRoute) {
+                showView('view-admin');
+                await initAdminAuth();
+                return;
+            }
+
+            // Obtener el slug del evento desde la ruta (/carlos-y-maria) o parámetro (?event=carlos-y-maria)
+            const slug = urlParams.get('event') || (path && path !== 'index.html' ? path : null);
+
+            if (!slug) {
+                showView('view-not-found');
+                return;
+            }
+
+            await loadPublicInvitation(slug);
+        }
+
+        function navigateTo(queryOrPath) {
+            window.location.href = queryOrPath;
+        }
+
+        function showView(viewId) {
+            ['view-loader', 'view-not-found', 'view-invitation', 'view-admin'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        /**
+         * 3. LÓGICA DE INVITACIÓN PÚBLICA
+         */
+        async function loadPublicInvitation(slug) {
+            try {
+                if (slug === 'demo-boda' || !isSupabaseConfigured) {
+                    if (!isSupabaseConfigured && slug !== 'demo-boda') {
+                        showToast('Modo Demo: Configura tus claves de Supabase en index.html', 'info');
+                    }
+                    currentEvent = { ...DEMO_EVENT, slug };
+                    renderInvitation(currentEvent);
+                    showView('view-invitation');
+                    return;
+                }
+
+                // Consultar evento en Supabase por su slug único
+                const { data, error } = await supabaseClient
+                    .from('events')
+                    .select('*')
+                    .eq('slug', slug)
+                    .single();
+
+                if (error || !data) {
+                    console.warn('Evento no encontrado:', error);
+                    showView('view-not-found');
+                    return;
+                }
+
+                currentEvent = data;
+                renderInvitation(currentEvent);
+                showView('view-invitation');
+
+            } catch (err) {
+                console.error('Error cargando invitación:', err);
+                showView('view-not-found');
+            }
+        }
+
+        function renderInvitation(ev) {
+            // Aplicar color personalizado del evento
+            if (ev.theme_color) {
+                document.documentElement.style.setProperty('--theme-color', ev.theme_color);
+            }
+
+            document.title = `${ev.protagonists} | Invitación Digital`;
+
+            // Pantalla del sobre
+            document.getElementById('env-event-type').textContent = ev.event_type || 'Invitación Especial';
+            document.getElementById('env-protagonists').textContent = ev.protagonists;
+
+            // Formatear fecha y hora
+            const dateObj = new Date(ev.event_date);
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+            
+            const formattedDate = dateObj.toLocaleDateString('es-ES', dateOptions);
+            const formattedTime = dateObj.toLocaleTimeString('es-ES', timeOptions);
+
+            document.getElementById('env-date-preview').textContent = formattedDate.toUpperCase();
+            document.getElementById('inv-hero-date').textContent = formattedDate;
+            document.getElementById('inv-formatted-date').textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+            document.getElementById('inv-formatted-time').textContent = `Hora: ${formattedTime}`;
+
+            // Contenido principal
+            document.getElementById('inv-badge-type').textContent = ev.event_type || 'Celebración';
+            document.getElementById('inv-protagonists').textContent = ev.protagonists;
+            document.getElementById('footer-protagonists').textContent = ev.protagonists;
+            document.getElementById('inv-phrase').textContent = `"${ev.phrase || ''}"`;
+            document.getElementById('inv-location-name').textContent = ev.location_name || 'Por confirmar';
+            document.getElementById('inv-location-address').textContent = ev.location_address || '';
+            document.getElementById('inv-maps-link').href = ev.maps_url || 'https://maps.google.com';
+            
+            if (ev.rsvp_subtitle) {
+                document.getElementById('inv-rsvp-subtitle').textContent = ev.rsvp_subtitle;
+            }
+
+            if (ev.cover_image) {
+                document.getElementById('inv-cover-img').src = ev.cover_image;
+            }
+
+            // Renderizar galería de fotos
+            const gallerySection = document.getElementById('inv-gallery-section');
+            const galleryGrid = document.getElementById('inv-gallery-grid');
+            const images = Array.isArray(ev.gallery_images) ? ev.gallery_images : [];
+
+            if (images.length > 0) {
+                gallerySection.classList.remove('hidden');
+                galleryGrid.innerHTML = images.map((url, idx) => `
+                    <div class="group relative aspect-[4/5] rounded-2xl overflow-hidden bg-stone-200 shadow-sm">
+                        <img src="${escapeHTML(url)}" alt="Foto ${idx + 1}" loading="lazy"
+                             onerror="this.parentElement.style.display='none'"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                    </div>
+                `).join('');
+            } else {
+                gallerySection.classList.add('hidden');
+            }
+
+            // Iniciar cuenta regresiva
+            startCountdown(dateObj);
+            lucide.createIcons();
+        }
+
+        function openInvitation() {
+            const envelope = document.getElementById('envelope-screen');
+            const content = document.getElementById('invitation-content');
+            
+            envelope.classList.add('envelope-opened');
+            content.classList.remove('hidden');
+            
+            setTimeout(() => {
+                content.classList.remove('opacity-0');
+                envelope.classList.add('hidden');
+            }, 300);
+        }
+
+        function startCountdown(targetDate) {
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            function update() {
+                const now = new Date().getTime();
+                const distance = targetDate.getTime() - now;
+
+                if (distance <= 0) {
+                    document.getElementById('cd-days').textContent = '00';
+                    document.getElementById('cd-hours').textContent = '00';
+                    document.getElementById('cd-minutes').textContent = '00';
+                    document.getElementById('cd-seconds').textContent = '00';
+                    clearInterval(countdownInterval);
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                document.getElementById('cd-days').textContent = String(days).padStart(2, '0');
+                document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+                document.getElementById('cd-minutes').textContent = String(minutes).padStart(2, '0');
+                document.getElementById('cd-seconds').textContent = String(seconds).padStart(2, '0');
+            }
+
+            update();
+            countdownInterval = setInterval(update, 1000);
+        }
+
+        function downloadCalendarICS() {
+            if (!currentEvent) return;
+            const start = new Date(currentEvent.event_date);
+            const end = new Date(start.getTime() + 4 * 60 * 60 * 1000); // +4 horas
+            
+            const formatICSDate = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'BEGIN:VEVENT',
+                `SUMMARY:${currentEvent.event_type} - ${currentEvent.protagonists}`,
+                `DTSTART:${formatICSDate(start)}`,
+                `DTEND:${formatICSDate(end)}`,
+                `LOCATION:${currentEvent.location_name}, ${currentEvent.location_address}`,
+                `DESCRIPTION:${currentEvent.phrase}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${currentEvent.slug || 'evento'}.ics`;
+            link.click();
+        }
+
+        /**
+         * 4. SISTEMA DE REGISTRO DE INVITADOS (RSVP)
+         */
+        function toggleCompanionsField() {
+            const status = document.getElementById('guest-status').value;
+            const wrapper = document.getElementById('companions-wrapper');
+            if (status === 'no_asiste') {
+                wrapper.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                wrapper.classList.remove('opacity-40', 'pointer-events-none');
+            }
+        }
+
+        async function handleRSVPSubmit(e) {
+            e.preventDefault();
+            if (isSubmittingRSVP || !currentEvent) return;
+
+            const fullName = document.getElementById('guest-name').value.trim();
+            const phone = document.getElementById('guest-phone').value.trim();
+            const status = document.getElementById('guest-status').value;
+            const companions = status === 'confirmado' ? parseInt(document.getElementById('guest-companions').value, 10) : 0;
+
+            if (!fullName) {
+                showToast('Por favor ingresa tu nombre y apellidos.', 'error');
+                return;
+            }
+
+            // Prevención de envíos duplicados accidentales
+            isSubmittingRSVP = true;
+            const submitBtn = document.getElementById('btn-submit-rsvp');
+            const originalBtnHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> Guardando...`;
+
+            try {
+                if (!isSupabaseConfigured || currentEvent.slug === 'demo-boda') {
+                    await new Promise(r => setTimeout(r, 600));
+                    showRSVPSuccess(fullName, status);
+                    return;
+                }
+
+                // Inserción directa en Supabase (solo INSERT permitido por RLS)
+                const { error } = await supabaseClient
+                    .from('guests')
+                    .insert([{
+                        event_id: currentEvent.id,
+                        full_name: fullName,
+                        phone: phone || null,
+                        companions: companions,
+                        status: status
+                    }]);
+
+                if (error) throw error;
+
+                showRSVPSuccess(fullName, status);
+
+            } catch (err) {
+                console.error('Error al registrar confirmación:', err);
+                showToast('Hubo un problema al guardar tu registro. Intenta nuevamente.', 'error');
+            } finally {
+                isSubmittingRSVP = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHTML;
+            }
+        }
+
+        function showRSVPSuccess(name, status) {
+            document.getElementById('rsvp-form').classList.add('hidden');
+            const successBox = document.getElementById('rsvp-success-box');
+            const successText = document.getElementById('rsvp-success-text');
+            
+            if (status === 'confirmado') {
+                successText.textContent = `¡Gracias, ${name}! Tu asistencia ha quedado confirmada en nuestra lista de invitados.`;
+            } else {
+                successText.textContent = `Gracias por avisarnos, ${name}. Lamentamos que no puedas acompañarnos en esta ocasión.`;
+            }
+            
+            successBox.classList.remove('hidden');
+            lucide.createIcons();
+            showToast('Confirmación registrada exitosamente', 'success');
+        }
+
+        function resetRSVPForm() {
+            document.getElementById('rsvp-form').reset();
+            toggleCompanionsField();
+            document.getElementById('rsvp-success-box').classList.add('hidden');
+            document.getElementById('rsvp-form').classList.remove('hidden');
+        }
+
+        /**
+         * 5. PANEL ADMINISTRATIVO Y AUTENTICACIÓN REAL SUPABASE
+         */
+        async function initAdminAuth() {
+            if (!isSupabaseConfigured) {
+                showToast('Configura SUPABASE_URL y SUPABASE_ANON_KEY para usar el panel real.', 'error');
+                document.getElementById('admin-login-screen').classList.remove('hidden');
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                await enterAdminDashboard(session.user);
+            } else {
+                document.getElementById('admin-login-screen').classList.remove('hidden');
+                document.getElementById('admin-dashboard-screen').classList.add('hidden');
+            }
+        }
+
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            if (!isSupabaseConfigured) {
+                showToast('Primero debes configurar tus credenciales de Supabase en el código.', 'error');
+                return;
+            }
+
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value;
+            const btn = document.getElementById('btn-admin-login');
+            
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                showToast('Sesión iniciada correctamente', 'success');
+                await enterAdminDashboard(data.user);
+
+            } catch (err) {
+                console.error('Login error:', err);
+                showToast('Credenciales incorrectas o usuario no autorizado.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Acceder al Panel</span><i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+                lucide.createIcons();
+            }
+        }
+
+        async function handleAdminLogout() {
+            if (supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            adminEvents = [];
+            adminGuests = [];
+            currentEvent = null;
+            document.getElementById('admin-dashboard-screen').classList.add('hidden');
+            document.getElementById('admin-login-screen').classList.remove('hidden');
+            showToast('Sesión cerrada', 'info');
+        }
+
+        async function enterAdminDashboard(user) {
+            document.getElementById('admin-login-screen').classList.add('hidden');
+            document.getElementById('admin-dashboard-screen').classList.remove('hidden');
+            document.getElementById('admin-user-email').textContent = user.email;
+
+            await loadAdminEvents(user.id);
+        }
+
+        async function loadAdminEvents(userId) {
+            try {
+                // RLS garantiza que solo devuelva los eventos pertenecientes a este administrador
+                const { data, error } = await supabaseClient
+                    .from('events')
+                    .select('*')
+                    .eq('admin_id', userId)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                adminEvents = data || [];
+                const selector = document.getElementById('admin-event-selector');
+
+                if (adminEvents.length === 0) {
+                    selector.innerHTML = '<option value="">Sin eventos creados</option>';
+                    openNewEventModal();
+                    return;
+                }
+
+                selector.innerHTML = adminEvents.map(ev => 
+                    `<option value="${ev.id}">${escapeHTML(ev.protagonists)} (/${escapeHTML(ev.slug)})</option>`
+                ).join('');
+
+                await switchAdminEvent(adminEvents[0].id);
+
+            } catch (err) {
+                console.error('Error cargando eventos del admin:', err);
+                showToast('Error al cargar tus eventos.', 'error');
+            }
+        }
+
+        async function switchAdminEvent(eventId) {
+            const selected = adminEvents.find(e => e.id === eventId);
+            if (!selected) return;
+
+            currentEvent = selected;
+
+            // Actualizar enlace público compartible
+            const baseUrl = window.location.origin;
+            const publicUrl = `${baseUrl}/${currentEvent.slug}`;
+            document.getElementById('admin-public-url').textContent = publicUrl;
+            document.getElementById('admin-preview-link').href = `/?event=${currentEvent.slug}`;
+
+            // Rellenar formulario de edición del evento
+            populateEventSettingsForm(currentEvent);
+
+            // Cargar invitados de este evento
+            await loadAdminGuests();
+        }
+
+        async function loadAdminGuests() {
+            if (!currentEvent) return;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('guests')
+                    .select('*')
+                    .eq('event_id', currentEvent.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                adminGuests = data || [];
+                updateDashboardKPIs();
+                renderGuestsTable();
+
+            } catch (err) {
+                console.error('Error cargando invitados:', err);
+                showToast('No se pudo cargar la lista de invitados.', 'error');
+            }
+        }
+
+        function updateDashboardKPIs() {
+            const totalInvited = Number(currentEvent?.total_invited || 0);
+            const totalRecords = adminGuests.length;
+            const confirmedRecords = adminGuests.filter(g => g.status === 'confirmado');
+            const totalAttendees = confirmedRecords.reduce((sum, g) => sum + Number(g.companions || 1), 0);
+            const pending = Math.max(0, totalInvited - totalAttendees);
+
+            document.getElementById('kpi-total-invited').textContent = totalInvited;
+            document.getElementById('kpi-total-records').textContent = totalRecords;
+            document.getElementById('kpi-confirmed-records').textContent = confirmedRecords.length;
+            document.getElementById('kpi-total-attendees').textContent = totalAttendees;
+            document.getElementById('kpi-pending').textContent = pending;
+        }
+
+        function renderGuestsTable() {
+            const search = document.getElementById('guest-search-input').value.toLowerCase().trim();
+            const statusFilter = document.getElementById('guest-filter-status').value;
+            const tbody = document.getElementById('guests-table-body');
+            const emptyState = document.getElementById('guests-empty-state');
+
+            const filtered = adminGuests.filter(g => {
+                const matchesSearch = g.full_name.toLowerCase().includes(search) || 
+                                      (g.phone && g.phone.toLowerCase().includes(search));
+                const matchesStatus = statusFilter === 'all' || g.status === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tbody.innerHTML = filtered.map(g => {
+                const dateStr = new Date(g.created_at).toLocaleString('es-ES', {
+                    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+                
+                const badge = g.status === 'confirmado'
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">Confirmado</span>`
+                    : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600">No asiste</span>`;
+
+                return `
+                    <tr class="hover:bg-stone-50/80 transition">
+                        <td class="py-3.5 px-5 font-medium text-stone-900">${escapeHTML(g.full_name)}</td>
+                        <td class="py-3.5 px-5 text-stone-500">${escapeHTML(g.phone || '—')}</td>
+                        <td class="py-3.5 px-5 text-center font-semibold text-stone-800">${g.status === 'confirmado' ? g.companions : 0}</td>
+                        <td class="py-3.5 px-5">${badge}</td>
+                        <td class="py-3.5 px-5 text-stone-400 text-xs">${dateStr}</td>
+                        <td class="py-3.5 px-5 text-right">
+                            <button onclick="promptDeleteGuest('${g.id}')" title="Eliminar registro"
+                                    class="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Eliminación segura con modal propio
+        function promptDeleteGuest(guestId) {
+            const modal = document.getElementById('modal-confirm-delete');
+            const confirmBtn = document.getElementById('btn-confirm-delete-action');
+            modal.classList.remove('hidden');
+
+            confirmBtn.onclick = async () => {
+                closeDeleteModal();
+                try {
+                    const { error } = await supabaseClient
+                        .from('guests')
+                        .delete()
+                        .eq('id', guestId);
+
+                    if (error) throw error;
+
+                    showToast('Registro eliminado', 'success');
+                    await loadAdminGuests();
+                } catch (err) {
+                    console.error('Error al eliminar:', err);
+                    showToast('No se pudo eliminar el registro.', 'error');
+                }
+            };
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('modal-confirm-delete').classList.add('hidden');
+        }
+
+        // Exportación a CSV compatible con Excel (UTF-8 con BOM)
+        function exportGuestsToCSV() {
+            if (!adminGuests || adminGuests.length === 0) {
+                showToast('No hay registros para exportar.', 'info');
+                return;
+            }
+
+            const headers = ['Nombre y Apellidos', 'Celular', 'Asistentes', 'Estado', 'Fecha de Registro'];
+            const rows = adminGuests.map(g => [
+                `"${(g.full_name || '').replace(/"/g, '""')}"`,
+                `"${(g.phone || '').replace(/"/g, '""')}"`,
+                g.status === 'confirmado' ? g.companions : 0,
+                g.status === 'confirmado' ? 'Confirmado' : 'No asiste',
+                `"${new Date(g.created_at).toLocaleString('es-ES')}"`
+            ]);
+
+            const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `invitados-${currentEvent.slug}-${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            showToast('Archivo CSV descargado', 'success');
+        }
+
+        /**
+         * 6. EDICIÓN Y CREACIÓN DE EVENTOS (PANEL ADMIN)
+         */
+        function switchAdminTab(tab) {
+            const guestsTab = document.getElementById('admin-tab-guests');
+            const settingsTab = document.getElementById('admin-tab-settings');
+            const btnGuests = document.getElementById('tab-btn-guests');
+            const btnSettings = document.getElementById('tab-btn-settings');
+
+            if (tab === 'guests') {
+                guestsTab.classList.remove('hidden');
+                settingsTab.classList.add('hidden');
+                btnGuests.className = 'pb-3.5 text-sm font-semibold border-b-2 border-stone-900 text-stone-900 flex items-center gap-2';
+                btnSettings.className = 'pb-3.5 text-sm font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center gap-2';
+            } else {
+                guestsTab.classList.add('hidden');
+                settingsTab.classList.remove('hidden');
+                btnSettings.className = 'pb-3.5 text-sm font-semibold border-b-2 border-stone-900 text-stone-900 flex items-center gap-2';
+                btnGuests.className = 'pb-3.5 text-sm font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-800 flex items-center gap-2';
+            }
+        }
+
+        function populateEventSettingsForm(ev) {
+            document.getElementById('edit-protagonists').value = ev.protagonists || '';
+            document.getElementById('edit-event-type').value = ev.event_type || '';
+            
+            // Convertir ISO a formato datetime-local (YYYY-MM-DDTHH:mm)
+            if (ev.event_date) {
+                const d = new Date(ev.event_date);
+                const tzOffset = d.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16);
+                document.getElementById('edit-event-date').value = localISOTime;
+            }
+
+            document.getElementById('edit-total-invited').value = ev.total_invited || 0;
+            document.getElementById('edit-theme-color').value = ev.theme_color || '#9A7B4F';
+            document.getElementById('edit-location-name').value = ev.location_name || '';
+            document.getElementById('edit-location-address').value = ev.location_address || '';
+            document.getElementById('edit-maps-url').value = ev.maps_url || '';
+            document.getElementById('edit-phrase').value = ev.phrase || '';
+            document.getElementById('edit-rsvp-subtitle').value = ev.rsvp_subtitle || '';
+            document.getElementById('edit-cover-image').value = ev.cover_image || '';
+            document.getElementById('edit-gallery-images').value = Array.isArray(ev.gallery_images) ? ev.gallery_images.join('\n') : '';
+        }
+
+        async function handleSaveEventSettings(e) {
+            e.preventDefault();
+            if (!currentEvent) return;
+
+            const btn = document.getElementById('btn-save-event');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            try {
+                const rawGallery = document.getElementById('edit-gallery-images').value;
+                const galleryArray = rawGallery.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+                const localDate = document.getElementById('edit-event-date').value;
+
+                const updates = {
+                    protagonists: document.getElementById('edit-protagonists').value.trim(),
+                    event_type: document.getElementById('edit-event-type').value.trim(),
+                    event_date: new Date(localDate).toISOString(),
+                    total_invited: parseInt(document.getElementById('edit-total-invited').value || '0', 10),
+                    theme_color: document.getElementById('edit-theme-color').value,
+                    location_name: document.getElementById('edit-location-name').value.trim(),
+                    location_address: document.getElementById('edit-location-address').value.trim(),
+                    maps_url: document.getElementById('edit-maps-url').value.trim(),
+                    phrase: document.getElementById('edit-phrase').value.trim(),
+                    rsvp_subtitle: document.getElementById('edit-rsvp-subtitle').value.trim(),
+                    cover_image: document.getElementById('edit-cover-image').value.trim(),
+                    gallery_images: galleryArray
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('events')
+                    .update(updates)
+                    .eq('id', currentEvent.id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                currentEvent = data;
+                const idx = adminEvents.findIndex(item => item.id === data.id);
+                if (idx !== -1) adminEvents[idx] = data;
+
+                updateDashboardKPIs();
+                showToast('Invitación actualizada correctamente', 'success');
+
+            } catch (err) {
+                console.error('Error guardando evento:', err);
+                showToast('Error al guardar los cambios.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Guardar Cambios`;
+                lucide.createIcons();
+            }
+        }
+
+        // Modal Crear Nuevo Evento
+        function openNewEventModal() {
+            document.getElementById('modal-new-event').classList.remove('hidden');
+        }
+
+        function closeNewEventModal() {
+            document.getElementById('modal-new-event').classList.add('hidden');
+        }
+
+        function autoGenerateSlug(text) {
+            const slug = text.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            document.getElementById('new-ev-slug').value = slug;
+        }
+
+        async function handleCreateNewEvent(e) {
+            e.preventDefault();
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) return;
+
+                const protagonists = document.getElementById('new-ev-protagonists').value.trim();
+                const slug = document.getElementById('new-ev-slug').value.trim().toLowerCase();
+                const eventType = document.getElementById('new-ev-type').value;
+                const eventDate = new Date(document.getElementById('new-ev-date').value).toISOString();
+
+                const { data, error } = await supabaseClient
+                    .from('events')
+                    .insert([{
+                        admin_id: user.id,
+                        protagonists,
+                        slug,
+                        event_type: eventType,
+                        event_date: eventDate,
+                        phrase: '¡Nos encantaría que formes parte de este día tan especial para nosotros!',
+                        location_name: 'Salón de Recepciones',
+                        location_address: 'Dirección del evento',
+                        maps_url: 'https://maps.google.com',
+                        cover_image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80',
+                        gallery_images: [],
+                        total_invited: 100
+                    }])
+                    .select()
+                    .single();
+
+                if (error) {
+                    if (error.code === '23505') {
+                        showToast('Ese enlace (slug) ya está en uso. Elige otro.', 'error');
+                        return;
+                    }
+                    throw error;
+                }
+
+                closeNewEventModal();
+                showToast('Nuevo evento creado con éxito', 'success');
+                await loadAdminEvents(user.id);
+                await switchAdminEvent(data.id);
+
+            } catch (err) {
+                console.error('Error creando evento:', err);
+                showToast('No se pudo crear el evento.', 'error');
+            }
+        }
+
+        function copyPublicLink() {
+            const urlText = document.getElementById('admin-public-url').textContent;
+            const tempInput = document.createElement('input');
+            tempInput.value = urlText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('Enlace copiado al portapapeles', 'success');
+        }
+
+        /**
+         * 7. UTILIDADES UI Y SEGURIDAD XSS
+         */
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[m]);
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const styles = {
+                success: 'bg-stone-900 text-white border-emerald-500',
+                error: 'bg-red-600 text-white border-red-800',
+                info: 'bg-stone-800 text-white border-stone-600'
+            };
+
+            toast.className = `${styles[type] || styles.info} px-4 py-3.5 rounded-2xl shadow-lg border-l-4 text-xs sm:text-sm font-medium flex items-center justify-between gap-3 pointer-events-auto transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>${escapeHTML(message)}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
